@@ -3,11 +3,12 @@ Messenger Backend
 Here we will provide installation and setup instruction for the messenger app
 We will add the details as we go 
 
+setup link : https://drive.google.com/drive/folders/1hKI6Au0QxLJKRScUAeDjA7PJGeopr6Jd?usp=sharing
 Install redis 
 
-Intall Postgres (according to setup files)
+Install Postgres (according to setup files)
 
-Run the sql file for postgres 
+Run the sql file for postgres from setup files
 
 add config file
 

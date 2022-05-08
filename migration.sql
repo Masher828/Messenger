@@ -1,4 +1,12 @@
-CREATE SEQUENCE hibernat_sequence
+SELECT 'CREATE DATABASE social_db' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'social_db')\gexec
+
+\c social_db;
+
+DROP SEQUENCE IF EXISTS hibernate_sequence;
+DROP INDEX IF EXISTS idx_social_user_email;
+DROP TABLE IF EXISTS social_user;
+
+CREATE SEQUENCE hibernate_sequence
 INCREMENT BY 1
 MINVALUE 1
 MAXVALUE 9223372036854775807

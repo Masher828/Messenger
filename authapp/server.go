@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Masher828/MessengerBackend/authapp/routes"
 	"github.com/Masher828/MessengerBackend/common-packages/conf"
 	"github.com/Masher828/MessengerBackend/common-packages/system"
-	"github.com/Masher828/MessengerBackend/messagesapp/routes"
 	"github.com/spf13/viper"
 	"github.com/zenazn/goji"
 )
@@ -15,12 +15,19 @@ import (
 func main() {
 	err := conf.LoadConfigFile()
 	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = system.PrepareSocialContext()
+	if err != nil {
 		fmt.Println(err.Error())
+		return
 	}
 	var application = system.Application{}
 	routes.PrepareRoutes(&application)
 
-	port := viper.GetString("apps.messagesapp.address")
+	port := viper.GetString("apps.authapp.address")
 	if len(os.Args) > 1 {
 		port = os.Args[1]
 	}

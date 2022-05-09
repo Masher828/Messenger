@@ -4,8 +4,7 @@ import "time"
 
 type UserModel struct {
 	Id          int64
-	FirstName   string    `json:"first_name"`
-	LastName    string    `json:"last_name"`
+	FullName    string    `json:"full_name"`
 	Email       string    `json:"email"`
 	Password    string    `json:"password"`
 	Contact     string    `json:"contact"`

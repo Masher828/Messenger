@@ -20,13 +20,7 @@ func GetDefaultLogger(userId int64, uri string, method string) *logger.Entry {
 			return s[len(s)-1], fileName
 		},
 	})
-	// logger.SetFormatter(&logger.JSONFormatter{
-	// 	CallerPrettyfier: func(f *runtime.Frame) (function string, file string) {
-	// 		fileName := path.Base(f.File) + ":" + strconv.Itoa(f.Line)
-	// 		s := strings.Split(f.Function, ".")
-	// 		return s[len(s)-1], fileName
-	// 	},
-	// })
+
 	return logger.WithFields(logger.Fields{
 		"userId": userId,
 		"uri":    uri,

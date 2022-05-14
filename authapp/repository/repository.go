@@ -29,3 +29,18 @@ func InsertUserToDB(user *models.UserModel, log *logrus.Entry) error {
 	}
 	return err
 }
+
+func GetUserByEmail(email string, log *logrus.Entry) (*models.UserModel, error) {
+	query := `SELECT id, name, email, password FROM social_user WHERE email = $1`
+
+	db := system.SocialContext.PostgresDB
+
+	var user models.UserModel
+
+	err := db.QueryRow(query, email).Scan(&user.Id, &user.FullName, &user.Email, &user.Password)
+
+	if err != nil {
+		log.Errorln(err)
+	}
+	return &user, err
+}

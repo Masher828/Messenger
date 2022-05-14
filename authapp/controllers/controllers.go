@@ -15,19 +15,40 @@ type Controller struct {
 	system.Controller
 }
 
-func (controler *Controller) CreateUser(c web.C, w http.ResponseWriter, r *http.Request, log *logrus.Entry) ([]byte, error) {
+func (controller *Controller) UserSignup(c web.C, w http.ResponseWriter, r *http.Request, log *logrus.Entry) ([]byte, error) {
 
 	user := models.UserModel{}
 	response := map[string]string{"status": "ok"}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		log.Errorln(err.Error())
+		return []byte{}, err
 	}
-	err = services.CreateUser(&user, log)
+	err = services.UserSignup(&user, log)
 	if err != nil {
 		log.Errorln(err)
 		return []byte{}, err
 	}
 
 	return json.Marshal(response)
+}
+
+func (controller *Controller) UserSignin(c web.C, w http.ResponseWriter, r *http.Request, log *logrus.Entry) ([]byte, error) {
+	user := models.UserLoginModel{}
+
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	userContext, err := services.UserSignIn(&user, log)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+	response := map[string]interface{}{"status": "ok", "userContext": userContext}
+
+	return json.Marshal(response)
+
 }

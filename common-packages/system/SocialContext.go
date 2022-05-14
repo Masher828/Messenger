@@ -21,6 +21,8 @@ func PrepareSocialContext() error {
 	if err != nil {
 		return err
 	}
+
 	SocialContext.PostgresDB = psqldb
+	SocialContext.Redis = database.GetRedisClient()
 	return nil
 }

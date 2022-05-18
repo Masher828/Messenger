@@ -52,3 +52,15 @@ func (controller *Controller) UserSignin(c web.C, w http.ResponseWriter, r *http
 	return json.Marshal(response)
 
 }
+
+func (controller *Controller) GetUsers(c web.C, w http.ResponseWriter, r *http.Request, log *logrus.Entry) ([]byte, error) {
+	users, err := services.GetAllUsers(log)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	response := map[string]interface{}{"success": true, "data": users}
+	return json.Marshal(response)
+
+}

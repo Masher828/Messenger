@@ -2,6 +2,7 @@ package models
 
 import (
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/Masher828/MessengerBackend/common-packages/system"
@@ -51,6 +52,8 @@ func (user *UserModel) IsValid() (bool, error) {
 		return false, system.InvalidContactNumberErr
 	}
 
+	user.Email = strings.ToLower(user.Email)
+
 	return true, nil
 }
 
@@ -70,6 +73,8 @@ func (user *UserLoginModel) IsValid() (bool, error) {
 	if len(user.Password) < 8 || len(user.Password) > 20 {
 		return false, system.InvalidPasswordFormatErr
 	}
+
+	user.Email = strings.ToLower(user.Email)
 
 	return true, nil
 }

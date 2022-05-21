@@ -60,6 +60,8 @@ func (controller *Controller) GetUsers(c web.C, w http.ResponseWriter, r *http.R
 		return nil, err
 	}
 
+	log.Errorln(err)
+
 	response := map[string]interface{}{"success": true, "data": users}
 	return json.Marshal(response)
 

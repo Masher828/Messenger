@@ -75,5 +75,6 @@ func UserSignIn(user *models.UserLoginModel, log *logrus.Entry) (*models.UserMod
 }
 
 func GetAllUsers(log *logrus.Entry) ([]string, error) {
+	// constants.SendMail()
 	return repository.GetAllUsers(log)
 }

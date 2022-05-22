@@ -8,6 +8,7 @@ var (
 
 	//Mongo Database
 	DatabaseSocialDB = "social_db"
+
 	//Collection Name
 	ConversationCollection     = "conversation"
 	UserConversationCollection = "user_conversation"

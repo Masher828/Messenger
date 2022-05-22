@@ -21,7 +21,7 @@ import (
 func GetDefaultLogger(userId int64, uri string, method string) *logger.Entry {
 	logger.SetReportCaller(true)
 
-	f, err := os.OpenFile("testlogrus.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	f, err := os.OpenFile("Logs.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println(err)
 	}

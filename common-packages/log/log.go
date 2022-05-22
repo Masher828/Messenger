@@ -1,7 +1,9 @@
 package log
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"io"
 	"net/smtp"
 	"os"
@@ -9,9 +11,11 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	logger "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 func GetDefaultLogger(userId int64, uri string, method string) *logger.Entry {
@@ -73,24 +77,71 @@ func (h *ExtraFieldHook) Levels() []logrus.Level {
 }
 
 func (h *ExtraFieldHook) Fire(entry *logrus.Entry) error {
-	fmt.Println(entry.Data, entry.Level, entry.Message)
-	SendMail("entry.Data[].(string)")
+	if viper.GetString("mail.sendActualMail") == "Y" {
+		go SendMail(entry)
+	}
 	return nil
 }
 
-func SendMail(message string) {
-	from := "******"
-	password := "**********"
-	toList := []string{""}
-	host := "smtp.gmail.com"
+func GetMessage(entry *logrus.Entry, from, password string) string {
 
-	port := "587"
+	timeFormat := "02-January-2006 :: 15:04:05.000000"
+	subject := "Subject: Exception occurred in " + os.Getenv("ENV") + "env at " + time.Now().Format(timeFormat) + "\r\n"
 
-	body := []byte(message)
+	data := struct {
+		FileName     string
+		FunctionName string
+		Error        string
+		Level        string
+	}{
+		FileName:     path.Base(entry.Caller.File) + ":" + strconv.Itoa(entry.Caller.Line),
+		FunctionName: entry.Caller.Function,
+		Error:        entry.Message,
+		Level:        entry.Level.String(),
+	}
+
+	t, err := template.New("").Parse(`
+	File : {{.FileName}},
+	Function : {{.FunctionName}},
+	Error : {{.Error}},
+	Level : {{.Level}}
+	`)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	var message bytes.Buffer
+
+	err = t.Execute(&message, data)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	msg := ""
+	msg += fmt.Sprintf("From: %s\r\n", from)
+	msg += fmt.Sprintf("To: %s\r\n", from)
+	msg += fmt.Sprintf("%s\r\n", subject)
+	msg += fmt.Sprintf("%s\r\n", message.String())
+
+	return msg
+}
+
+func SendMail(entry *logrus.Entry) {
+
+	from := viper.GetString("mail.from")
+	password := viper.GetString("mail.password")
+
+	toList := []string{from}
+
+	host := viper.GetString("mail.host")
+
+	port := viper.GetString("mail.port")
+
+	message := GetMessage(entry, from, password)
 
 	auth := smtp.PlainAuth("", from, password, host)
 
-	err := smtp.SendMail(host+":"+port, auth, from, toList, body)
+	err := smtp.SendMail(host+":"+port, auth, from, toList, []byte(message))
 
 	if err != nil {
 		fmt.Println(err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -16,7 +17,10 @@ func GetMongoClient() (*mongo.Client, error) {
 
 	options.ServerSelectionTimeout = &timeOut
 
-	client, err := mongo.Connect(context.TODO(), options.ApplyURI("mongodb://localhost:27017"))
+	host := viper.GetString("database.mongodb.host")
+	port := viper.GetString("database.mongodb.port")
+
+	client, err := mongo.Connect(context.TODO(), options.ApplyURI("mongodb://"+host+":"+port))
 	if err != nil {
 		return nil, err
 	}

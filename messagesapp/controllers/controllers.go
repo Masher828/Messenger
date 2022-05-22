@@ -16,7 +16,7 @@ type Controller struct {
 }
 
 func (controller *Controller) CreateConversation(c web.C, w http.ResponseWriter, r *http.Request, log *logrus.Entry) ([]byte, error) {
-	var conversation models.Conversation
+	var conversation models.CreateConversationRequest
 
 	var response map[string]string
 
@@ -26,7 +26,7 @@ func (controller *Controller) CreateConversation(c web.C, w http.ResponseWriter,
 		return []byte{}, err
 	}
 
-	err = services.CreateConversation(&conversation, log)
+	err = services.CreateConversation(&conversation.Conversation, conversation.Users, log)
 	if err != nil {
 		log.Errorln(err)
 		return []byte{}, err

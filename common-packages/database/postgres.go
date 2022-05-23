@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -18,6 +19,12 @@ func GetPostgresClient() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	err = db.PingContext(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
 	return db, nil
 
 }

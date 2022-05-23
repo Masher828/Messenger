@@ -16,6 +16,13 @@ func main() {
 	err := conf.LoadConfigFile()
 	if err != nil {
 		fmt.Println(err.Error())
+		return
+	}
+
+	err = system.PrepareSocialContext()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
 	var application = system.Application{}
 	routes.PrepareRoutes(&application)

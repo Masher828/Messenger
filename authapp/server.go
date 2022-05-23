@@ -15,7 +15,7 @@ import (
 func main() {
 	err := conf.LoadConfigFile()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 		return
 	}
 

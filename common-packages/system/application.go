@@ -21,6 +21,9 @@ func (application *Application) Route(controller interface{}, route string) inte
 		method := methodInterface.(func(c web.C, w http.ResponseWriter, r *http.Request, logger *logrus.Entry) ([]byte, error))
 		response, err := method(c, w, r, logger)
 		if err != nil {
+			if err.Error() == "EOF" {
+				err = InvalidPayloadData
+			}
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 		} else {

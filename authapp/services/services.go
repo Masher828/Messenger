@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/Masher828/MessengerBackend/authapp/models"
@@ -21,7 +20,10 @@ func UserSignup(user *models.UserModel, log *logrus.Entry) error {
 		return err
 	}
 
-	fmt.Println(user)
+	userDetails, err := repository.GetUserByEmail(user.Email, log)
+	if err == nil && userDetails.Id != 0 {
+		return system.EmailAlreadyExists
+	}
 
 	passwordBytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), int(time.Now().Month()))
 	if err != nil {
@@ -31,7 +33,7 @@ func UserSignup(user *models.UserModel, log *logrus.Entry) error {
 
 	user.Id = repository.GetNextHibernateSequence()
 	user.Password = string(passwordBytes)
-	fmt.Println(user)
+
 	err = repository.InsertUserToDB(user, log)
 	if err != nil {
 		log.Errorln(err)
@@ -67,7 +69,13 @@ func UserSignIn(user *models.UserLoginModel, log *logrus.Entry) (*models.UserMod
 	userContext := userDetails.GetUserContext()
 	userContext.AccessToken = accessToken
 	data, _ := json.Marshal(userContext)
-
+  
 	redisDb.Set(context.TODO(), accessToken, data, 60*time.Minute)
 	return userContext, nil
+}
+
+func GetAllUsers(log *logrus.Entry) ([]string, error) {
+	// constants.SendMail()
+	log.Errorln("hii")
+	return repository.GetAllUsers(log)
 }

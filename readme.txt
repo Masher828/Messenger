@@ -8,6 +8,8 @@ Install redis
 
 Install Postgres (according to setup files)
 
+Install Mongo
+
 Run the sql file for postgres from setup files
 
 add config file
@@ -21,6 +23,3 @@ go get
 if some packages is not installed copy the package from setup files to go path 
 go get (again if any error)
 go run server.go (in each app)
-
-
-

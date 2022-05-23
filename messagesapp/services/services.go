@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/Masher828/MessengerBackend/common-packages/system"
 	"github.com/Masher828/MessengerBackend/messagesapp/models"
 	"github.com/Masher828/MessengerBackend/messagesapp/repository"
 	"github.com/google/uuid"
@@ -16,6 +17,9 @@ func CreateConversation(conversation *models.Conversation, users []int64, log *l
 
 	conversation.Id = uuid.New().String()
 
+	now := system.GetUTCTime().Unix()
+	conversation.UpdatedOn = now
+	conversation.UpdatedOn = now
 	err := repository.CreateConversation(conversation, log)
 	if err != nil {
 		log.Errorln(err)
@@ -31,6 +35,8 @@ func CreateConversation(conversation *models.Conversation, users []int64, log *l
 			UserId:         userId,
 			IsArchived:     false,
 			IsMuted:        false,
+			UpdatedOn:      now,
+			CreatedOn:      now,
 		}
 
 		userConversations = append(userConversations, &userConversation)
@@ -42,4 +48,9 @@ func CreateConversation(conversation *models.Conversation, users []int64, log *l
 	}
 
 	return err
+}
+
+func GetuserConversation(id int64, offset, limit int64, log *logrus.Entry) ([]models.ResponseUserConversation, error) {
+
+	return repository.GetuserConversation(id, offset, limit, log)
 }

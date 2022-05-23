@@ -69,7 +69,7 @@ func UserSignIn(user *models.UserLoginModel, log *logrus.Entry) (*models.UserMod
 	userContext := userDetails.GetUserContext()
 	userContext.AccessToken = accessToken
 	data, _ := json.Marshal(userContext)
-
+  
 	redisDb.Set(context.TODO(), accessToken, data, 60*time.Minute)
 	return userContext, nil
 }

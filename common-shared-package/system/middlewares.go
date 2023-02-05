@@ -40,7 +40,7 @@ func (application *Application) Route(controller interface{}, controllerName str
 
 			methodInterface := reflect.ValueOf(controller).MethodByName(controllerName).Interface()
 
-			method := methodInterface.(func(c *gin.Context, log *zap.Logger) ([]byte, error))
+			method := methodInterface.(func(c *gin.Context, log *zap.SugaredLogger) ([]byte, error))
 			response, err := method(c, logger)
 			code := http.StatusOK
 

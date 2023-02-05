@@ -4,7 +4,7 @@ type Controller struct {
 }
 
 type UserContext struct {
-	UserId      int64
+	UserId      string
 	Name        string
 	AccessToken string
 }

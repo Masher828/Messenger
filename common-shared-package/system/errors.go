@@ -3,13 +3,14 @@ package system
 import "errors"
 
 var (
-	Err               = errors.New("hh")
-	ErrInternalServer = errors.New("internal server error")
+	ErrInternalServer     = errors.New("internal server error")
+	ErrInvalidCredentials = errors.New("invalid email & password")
 )
 
 func getErrorMessageMap() map[error]bool {
 	ErrorInResponseMap := map[error]bool{
-		Err: false,
+		ErrInternalServer:     false,
+		ErrInvalidCredentials: true,
 	}
 	return ErrorInResponseMap
 }

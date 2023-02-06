@@ -3,7 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
-	mongo_common_repo "github.com/Masher828/MessengerBackend/common-shared-package/mongo-common-repo"
+	mongocommonrepo "github.com/Masher828/MessengerBackend/common-shared-package/mongo-common-repo"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -34,31 +34,31 @@ type User struct {
 
 func (user *User) Insert(log *zap.SugaredLogger) error {
 
+	emailExists, err := user.IsEmailUnique(log)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	if emailExists {
+		err = system.ErrEmailAlreadyExists
+		return err
+	}
 	user.Id = uuid.NewString()
 	user.UpdatedOn = system.NowInUTCMicro()
 	user.CreatedOn = user.UpdatedOn
-	err := user.getEncryptedPassword(log)
+	err = user.encryptedPassword(log)
 	if err != nil {
 		log.Errorln(err)
 		return err
 	}
 
-	err = mongo_common_repo.InsertDocument(log, system.UserCollectionName, user)
+	err = mongocommonrepo.InsertDocument(log, system.UserCollectionName, user)
 	if err != nil {
 		log.Errorln(err)
 		return err
 	}
 
-	return nil
-}
-
-func (user *User) getEncryptedPassword(log *zap.SugaredLogger) error {
-	var err error = nil
-	user.Salt, user.Password, err = system.GetHashedPassword(user.Password)
-	if err != nil {
-		log.Errorln(err)
-		return err
-	}
 	return nil
 }
 
@@ -76,7 +76,9 @@ func (user *User) Update(log *zap.SugaredLogger, updatedUser *User) error {
 }
 
 func (user *User) UpdateWithMap(log *zap.SugaredLogger, dataToBeUpdated map[string]interface{}) error {
-	err := mongo_common_repo.UpdateDocumentById(log, system.UserCollectionName, user.Id, dataToBeUpdated)
+
+	dataToBeUpdated["updatedOn"] = system.NowInUTCMicro()
+	err := mongocommonrepo.UpdateDocumentById(log, system.UserCollectionName, user.Id, dataToBeUpdated)
 	if err != nil {
 		log.Errorln(err)
 		return err
@@ -86,20 +88,20 @@ func (user *User) UpdateWithMap(log *zap.SugaredLogger, dataToBeUpdated map[stri
 }
 
 func (user *User) IsEmailUnique(log *zap.SugaredLogger) (bool, error) {
-	data := User{}
-	err := mongo_common_repo.GetSingleDocumentByFilter(log, "d", map[string]interface{}{}, &data)
+	filter := map[string]interface{}{"emailId": user.EmailId}
+	count, err := mongocommonrepo.GetDocumentCountsByFilter(log, system.UserCollectionName, filter)
 	if err != nil {
 		log.Errorln(err)
 		return false, err
 	}
 
-	return true, nil
+	return count == 0, nil
 }
 
 func (user *User) SetUserByEmail(log *zap.SugaredLogger, email string) error {
 
 	filter := map[string]interface{}{"emailId": email}
-	err := mongo_common_repo.GetSingleDocumentByFilter(log, system.UserCollectionName, filter, &user)
+	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.UserCollectionName, filter, &user)
 	if err != nil {
 		log.Errorln(err)
 		return err
@@ -119,7 +121,19 @@ func (user *User) UpdateLastLogin(log *zap.SugaredLogger) {
 }
 
 func (user *User) invalidPasswordHandler(log *zap.SugaredLogger) {
+	user.InCorrectPasswordCount += 1
 
+	dataToBeUpdated := map[string]interface{}{"inCorrectPasswordCount": user.InCorrectPasswordCount}
+
+	if user.InCorrectPasswordCount >= system.MaxPasswordRetries {
+		dataToBeUpdated["isLocked"] = true
+	}
+
+	err := user.UpdateWithMap(log, dataToBeUpdated)
+	if err != nil {
+		log.Errorln(err)
+		return
+	}
 }
 
 func (user *User) GetUserContextDetails() *system.UserContext {
@@ -131,6 +145,7 @@ func (user *User) GetUserContextDetails() *system.UserContext {
 
 	return &userContext
 }
+
 func (user *User) AddAccessTokenToUser(log *zap.SugaredLogger) error {
 	db := system.MessengerContext.Redis
 
@@ -143,7 +158,27 @@ func (user *User) AddAccessTokenToUser(log *zap.SugaredLogger) error {
 	return nil
 }
 
+func (user *User) encryptedPassword(log *zap.SugaredLogger) error {
+	var err error = nil
+	user.Salt, user.Password, err = system.GetHashedPassword(user.Password)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+	return nil
+}
+
 func (user *User) SignIn(log *zap.SugaredLogger, emailId, password string) (*system.UserContext, error) {
+
+	err := user.SetUserByEmail(log, emailId)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	if user.IsLocked {
+		return nil, system.ErrUserIsLockedOut
+	}
 
 	hashedPassword := system.HashPassword(user.Salt, password)
 
@@ -168,11 +203,28 @@ func (user *User) SignIn(log *zap.SugaredLogger, emailId, password string) (*sys
 
 	user.AccessToken = uuid.NewString()
 
-	err := user.AddAccessTokenToUser(log)
+	err = user.AddAccessTokenToUser(log)
 	if err != nil {
 		log.Errorln(err)
 		return nil, err
 	}
 
 	return user.GetUserContextDetails(), nil
+}
+
+func (user *User) UpdatePassword(log *zap.SugaredLogger) error {
+	err := user.encryptedPassword(log)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	dataToUpdate := map[string]interface{}{"salt": user.Salt, "password": user.Password}
+	err = user.UpdateWithMap(log, dataToUpdate)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return nil
 }

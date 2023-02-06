@@ -49,3 +49,18 @@ func UpdateDocumentById(log *zap.SugaredLogger, collectionName, documentId strin
 
 	return nil
 }
+
+func GetDocumentCountsByFilter(log *zap.SugaredLogger, collectionName string, filter map[string]interface{}) (int64, error) {
+	db := system.MessengerContext.MongoDB
+
+	collection := db.Database(system.MongoDatabaseName).Collection(collectionName)
+
+	count, err := collection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		log.Errorln(err)
+		return 0, err
+	}
+
+	return count, nil
+
+}

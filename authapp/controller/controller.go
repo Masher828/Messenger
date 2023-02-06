@@ -26,6 +26,7 @@ func (controller *Controller) SignIn(c *gin.Context, log *zap.SugaredLogger) ([]
 	}
 
 	user := models.User{}
+
 	userDetails, err := user.SignIn(log, data.EmailId, data.Password)
 	if err != nil {
 		log.Errorln(err)

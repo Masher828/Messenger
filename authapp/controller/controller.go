@@ -131,7 +131,8 @@ func (controller *Controller) UpdateStatus(c *gin.Context, log *zap.SugaredLogge
 		return nil, err
 	}
 
-	user := models.User{Id: userContext.UserId}
+	user := models.User{}
+	user.Id = userContext.UserId
 
 	err := user.UpdateStatus(log, c.Param("status"))
 	if err != nil {
@@ -177,6 +178,28 @@ func (controller *Controller) UpdateProfile(c *gin.Context, log *zap.SugaredLogg
 	}
 
 	resp := response{Success: true}
+
+	return json.Marshal(resp)
+}
+
+func (controller *Controller) GetProfile(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
+	userContext := system.GetUserContextFromGinContext(c)
+	if userContext == nil {
+		err := system.ErrUnauthorizedAccess
+		log.Errorln(err)
+		return nil, err
+	}
+
+	user := models.User{}
+	err := user.SetUserById(log, userContext.UserId)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	resp := response{}
+	resp.Success = true
+	resp.Data = user.UserProfile
 
 	return json.Marshal(resp)
 }

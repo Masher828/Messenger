@@ -14,22 +14,25 @@ type RequestUser struct {
 	Password string `json:"password,omitempty"`
 }
 
+type UserProfile struct {
+	Id        string `json:"id" bson:"_id"`
+	FirstName string `json:"firstName" binding:"required,min=2,max=200" bson:"firstName"`
+	LastName  string `json:"lastName,omitempty" binding:"max=200" bson:"lastName,omitempty"`
+	EmailId   string `json:"emailId" binding:"required,email,min=5,max=200" bson:"emailId"`
+	Phone     string `json:"phone,omitempty" bson:"phone,omitempty"`
+	Status    string `json:"status,omitempty" bson:"status,omitempty"`
+	Gender    string `json:"gender" binding:"max=20" bson:"gender"`
+	UpdatedOn int64  `json:"updatedOn" bson:"updatedOn"`
+	CreatedOn int64  `json:"createdOn" bson:"createdOn"`
+	LastLogin int64  `json:"lastLoginOn" bson:"lastLoginOn"`
+}
 type User struct {
-	Id                     string `json:"id" bson:"_id"`
-	FirstName              string `json:"firstName" binding:"required,min=2,max=200" bson:"firstName"`
-	LastName               string `json:"lastName,omitempty" binding:"max=200" bson:"lastName,omitempty"`
-	EmailId                string `json:"emailId" binding:"required,email,min=5,max=200" bson:"emailId"`
-	Phone                  string `json:"phone,omitempty" bson:"phone,omitempty"`
-	Status                 string `json:"status,omitempty" bson:"status,omitempty"`
+	UserProfile
 	Deleted                bool   `json:"deleted,omitempty" bson:"deleted,omitempty"`
 	Password               string `json:"password" binding:"required,alphanum,min=8,max=200" bson:"password"`
 	Salt                   []byte `json:"salt" bson:"salt"`
 	InCorrectPasswordCount int    `json:"inCorrectPasswordCount,omitempty" bson:"inCorrectPasswordCount,omitempty"`
 	IsLocked               bool   `json:"isLocked" bson:"isLocked"`
-	Gender                 string `json:"gender" binding:"max=20" bson:"gender"`
-	UpdatedOn              int64  `json:"updatedOn" bson:"updatedOn"`
-	CreatedOn              int64  `json:"createdOn" bson:"createdOn"`
-	LastLogin              int64  `json:"lastLoginOn" bson:"lastLoginOn"`
 	AccessToken            string
 
 	// To reset password

@@ -7,14 +7,15 @@ import "time"
 const (
 	//system constants
 
-	AuthFailed                      = "AuthFAILED"
-	AuthUserContext                 = "UserContext"
-	RequestStartTime                = "RequestStartTime"
-	AccessTokenToUser               = "AccessTokenToUser:%s"
-	DefaultHashSaltSize       int64 = 16
-	DefaultAccessTokenExpiry        = time.Hour * 24 * 3
-	IncorrectPasswordCountKey       = "IncorrectPasswordCount:%s"
-	MaxPasswordRetries              = 5
+	AuthFailed                     = "AuthFAILED"
+	AuthUserContext                = "UserContext"
+	RequestStartTime               = "RequestStartTime"
+	AccessTokenToUser              = "AccessTokenToUser:%s"
+	DefaultHashSaltSize      int64 = 16
+	DefaultAccessTokenExpiry       = time.Hour * 24 * 3
+	ResetPasswordTokenKey          = "ResetPasswordToken:%s"
+	ResetPasswordTokenExpiry       = time.Minute * 5
+	MaxPasswordRetries             = 5
 	// MongoDatabaseName constants
 
 	MongoDatabaseName  = "messages_db"

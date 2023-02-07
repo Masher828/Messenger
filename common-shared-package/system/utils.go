@@ -100,6 +100,15 @@ func GetHashedPassword(password string) ([]byte, string, error) {
 	return salt, hashedPass, nil
 }
 
+func GetUserContextFromGinContext(c *gin.Context) *UserContext {
+	userContext, ok := c.Get(AuthUserContext)
+	if !ok || userContext == nil {
+		return nil
+	}
+
+	return userContext.(*UserContext)
+}
+
 func GetUserContextFromAccessToken(accessToken string) (*UserContext, error) {
 	db := MessengerContext.Redis
 

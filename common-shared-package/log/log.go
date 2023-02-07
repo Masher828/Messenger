@@ -11,7 +11,6 @@ func GetDefaultLogger(userId string, url string, method string) *zap.SugaredLogg
 
 	logg := zap.NewProductionConfig()
 	logg.Encoding = "console"
-	//logg.Enco
 	logg.DisableStacktrace = true
 	logg.EncoderConfig.CallerKey = "caller"
 	logg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder

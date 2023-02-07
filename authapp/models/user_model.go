@@ -10,8 +10,8 @@ import (
 )
 
 type RequestUser struct {
-	EmailId  string `json:"emailId" bson:"emailId"`
-	Password string `json:"password" bson:"password"`
+	EmailId  string `json:"emailId,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 type User struct {
@@ -20,6 +20,7 @@ type User struct {
 	LastName               string `json:"lastName,omitempty" binding:"max=200" bson:"lastName,omitempty"`
 	EmailId                string `json:"emailId" binding:"required,email,min=5,max=200" bson:"emailId"`
 	Phone                  string `json:"phone,omitempty" bson:"phone,omitempty"`
+	Status                 string `json:"status,omitempty" bson:"status,omitempty"`
 	Deleted                bool   `json:"deleted,omitempty" bson:"deleted,omitempty"`
 	Password               string `json:"password" binding:"required,alphanum,min=8,max=200" bson:"password"`
 	Salt                   []byte `json:"salt" bson:"salt"`
@@ -29,7 +30,10 @@ type User struct {
 	UpdatedOn              int64  `json:"updatedOn" bson:"updatedOn"`
 	CreatedOn              int64  `json:"createdOn" bson:"createdOn"`
 	LastLogin              int64  `json:"lastLoginOn" bson:"lastLoginOn"`
-	AccessToken            string `json:"accessToken" bson:"accessToken"`
+	AccessToken            string
+
+	// To reset password
+	ResetPasswordToken string `json:"resetPasswordToken,omitempty"`
 }
 
 func (user *User) Insert(log *zap.SugaredLogger) error {
@@ -101,6 +105,18 @@ func (user *User) IsEmailUnique(log *zap.SugaredLogger) (bool, error) {
 func (user *User) SetUserByEmail(log *zap.SugaredLogger, email string) error {
 
 	filter := map[string]interface{}{"emailId": email}
+	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.UserCollectionName, filter, &user)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return nil
+}
+
+func (user *User) SetUserById(log *zap.SugaredLogger, userId string) error {
+
+	filter := map[string]interface{}{"_id": userId}
 	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.UserCollectionName, filter, &user)
 	if err != nil {
 		log.Errorln(err)
@@ -212,19 +228,67 @@ func (user *User) SignIn(log *zap.SugaredLogger, emailId, password string) (*sys
 	return user.GetUserContextDetails(), nil
 }
 
+func (user *User) validateResetPasswordToken() bool {
+	db := system.MessengerContext.Redis
+
+	key := fmt.Sprintf(system.ResetPasswordTokenKey, user.ResetPasswordToken)
+	redisUserId := db.Get(context.TODO(), key).String()
+
+	return user.Id == redisUserId
+}
+
 func (user *User) UpdatePassword(log *zap.SugaredLogger) error {
+
+	if len(user.ResetPasswordToken) > 0 && !user.validateResetPasswordToken() {
+		return system.ErrInvalidPasswordToken
+	}
 	err := user.encryptedPassword(log)
 	if err != nil {
 		log.Errorln(err)
 		return err
 	}
 
-	dataToUpdate := map[string]interface{}{"salt": user.Salt, "password": user.Password}
+	dataToUpdate := map[string]interface{}{"salt": user.Salt, "password": user.Password, "inCorrectPasswordCount": 0, "isLocked": false}
 	err = user.UpdateWithMap(log, dataToUpdate)
 	if err != nil {
 		log.Errorln(err)
 		return err
 	}
 
+	return nil
+}
+
+func (user *User) ResetPassword(log *zap.SugaredLogger) (string, error) {
+	//TODO handle with publisher to send otp
+	resetPasswordToken := uuid.NewString()
+	fmt.Println("Reset Password Token : ", resetPasswordToken)
+
+	dataToUpdate := map[string]interface{}{"password": "", "salt": ""}
+	err := user.UpdateWithMap(log, dataToUpdate)
+	if err != nil {
+		log.Errorln(err)
+		return "", err
+	}
+
+	db := system.MessengerContext.Redis
+	key := fmt.Sprintf(system.ResetPasswordTokenKey, user.Id)
+	err = db.Set(context.TODO(), key, true, system.ResetPasswordTokenExpiry).Err()
+	if err != nil {
+		log.Errorln(err)
+		return "", err
+	}
+
+	return resetPasswordToken, nil
+}
+
+func (user *User) UpdateStatus(log *zap.SugaredLogger, status string) error {
+
+	dataToUpdate := map[string]interface{}{"status": status}
+
+	err := user.UpdateWithMap(log, dataToUpdate)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
 	return nil
 }

@@ -3,6 +3,7 @@ package mongo_common_repo
 import (
 	"context"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 )
 
@@ -63,4 +64,70 @@ func GetDocumentCountsByFilter(log *zap.SugaredLogger, collectionName string, fi
 
 	return count, nil
 
+}
+
+func GetDocumentsWithFilter(log *zap.SugaredLogger, collectionName string, filter map[string]interface{}, offset, limit int64, data interface{}) error {
+
+	db := system.MessengerContext.MongoDB
+
+	collection := db.Database(system.MongoDatabaseName).Collection(collectionName)
+
+	opts := options.FindOptions{}
+	if offset > 0 {
+		opts.SetSkip(offset)
+	}
+
+	if limit > 0 {
+		opts.SetLimit(limit)
+	}
+
+	opts.SetSort(map[string]interface{}{"createdOn": -1})
+
+	cursor, err := collection.Find(context.TODO(), filter, &opts)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	defer cursor.Close(context.TODO())
+
+	err = cursor.All(context.TODO(), &data)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return err
+}
+
+func UpsertDocumentCustomQuery(log *zap.SugaredLogger, collectionName string, filter, updateQuery map[string]interface{}) error {
+
+	db := system.MessengerContext.MongoDB
+
+	collection := db.Database(system.MongoDatabaseName).Collection(collectionName)
+
+	opts := options.UpdateOptions{}
+	opts.SetUpsert(true)
+
+	_, err := collection.UpdateMany(context.TODO(), filter, updateQuery, &opts)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return nil
+}
+
+func DeleteSingleDocumentByFilter(log *zap.SugaredLogger, collectionName string, filter map[string]interface{}) error {
+	db := system.MessengerContext.MongoDB
+
+	collection := db.Database(system.MongoDatabaseName).Collection(collectionName)
+
+	_, err := collection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return nil
 }

@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/Masher828/MessengerBackend/authapp/routes"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
+	"github.com/Masher828/MessengerBackend/messagesapp/routes"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,7 +27,7 @@ func main() {
 
 	app.Use(application.ApplyAuth())
 
-	port := ":8081"
+	port := ":8082"
 	err = app.Run(port)
 	if err != nil {
 		fmt.Printf("Error while listening on port : %s\n", port)

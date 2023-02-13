@@ -18,6 +18,11 @@ type Response struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
+type uRIParam struct {
+	Limit  int64 `form:"limit"`
+	Offset int64 `form:"offset"`
+}
+
 func NowInUTC() time.Time {
 	return time.Now().UTC()
 }
@@ -143,4 +148,18 @@ func getAccessTokenFromContext(c *gin.Context) string {
 	}
 
 	return bearerTokenSplit[1]
+}
+
+func GetOffsetAndLimitFromContext(c *gin.Context, defaultLimit int64) (int64, int64) {
+	urlParam := uRIParam{}
+	err := c.Bind(&urlParam)
+	if err != nil {
+		fmt.Println(err.Error())
+		return 0, 0
+	}
+	if urlParam.Limit == 0 {
+		urlParam.Limit = defaultLimit
+	}
+
+	return urlParam.Offset, urlParam.Limit
 }

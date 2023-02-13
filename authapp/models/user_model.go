@@ -14,20 +14,8 @@ type RequestUser struct {
 	Password string `json:"password,omitempty"`
 }
 
-type UserProfile struct {
-	Id        string `json:"id" bson:"_id"`
-	FirstName string `json:"firstName" binding:"required,min=2,max=200" bson:"firstName"`
-	LastName  string `json:"lastName,omitempty" binding:"max=200" bson:"lastName,omitempty"`
-	EmailId   string `json:"emailId" binding:"required,email,min=5,max=200" bson:"emailId"`
-	Phone     string `json:"phone,omitempty" bson:"phone,omitempty"`
-	Status    string `json:"status,omitempty" bson:"status,omitempty"`
-	Gender    string `json:"gender" binding:"max=20" bson:"gender"`
-	UpdatedOn int64  `json:"updatedOn" bson:"updatedOn"`
-	CreatedOn int64  `json:"createdOn" bson:"createdOn"`
-	LastLogin int64  `json:"lastLoginOn" bson:"lastLoginOn"`
-}
 type User struct {
-	UserProfile
+	system.UserProfile
 	Deleted                bool   `json:"deleted,omitempty" bson:"deleted,omitempty"`
 	Password               string `json:"password" binding:"required,alphanum,min=8,max=200" bson:"password"`
 	Salt                   []byte `json:"salt" bson:"salt"`
@@ -60,7 +48,7 @@ func (user *User) Insert(log *zap.SugaredLogger) error {
 		return err
 	}
 
-	err = mongocommonrepo.InsertDocument(log, system.UserCollectionName, user)
+	err = mongocommonrepo.InsertDocument(log, system.CollectionNameUser, user)
 	if err != nil {
 		log.Errorln(err)
 		return err
@@ -85,7 +73,7 @@ func (user *User) Update(log *zap.SugaredLogger, updatedUser *User) error {
 func (user *User) UpdateWithMap(log *zap.SugaredLogger, dataToBeUpdated map[string]interface{}) error {
 
 	dataToBeUpdated["updatedOn"] = system.NowInUTCMicro()
-	err := mongocommonrepo.UpdateDocumentById(log, system.UserCollectionName, user.Id, dataToBeUpdated)
+	err := mongocommonrepo.UpdateDocumentById(log, system.CollectionNameUser, user.Id, dataToBeUpdated)
 	if err != nil {
 		log.Errorln(err)
 		return err
@@ -96,7 +84,7 @@ func (user *User) UpdateWithMap(log *zap.SugaredLogger, dataToBeUpdated map[stri
 
 func (user *User) IsEmailUnique(log *zap.SugaredLogger) (bool, error) {
 	filter := map[string]interface{}{"emailId": user.EmailId}
-	count, err := mongocommonrepo.GetDocumentCountsByFilter(log, system.UserCollectionName, filter)
+	count, err := mongocommonrepo.GetDocumentCountsByFilter(log, system.CollectionNameUser, filter)
 	if err != nil {
 		log.Errorln(err)
 		return false, err
@@ -108,7 +96,7 @@ func (user *User) IsEmailUnique(log *zap.SugaredLogger) (bool, error) {
 func (user *User) SetUserByEmail(log *zap.SugaredLogger, email string) error {
 
 	filter := map[string]interface{}{"emailId": email}
-	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.UserCollectionName, filter, &user)
+	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.CollectionNameUser, filter, &user)
 	if err != nil {
 		log.Errorln(err)
 		return err
@@ -120,7 +108,7 @@ func (user *User) SetUserByEmail(log *zap.SugaredLogger, email string) error {
 func (user *User) SetUserById(log *zap.SugaredLogger, userId string) error {
 
 	filter := map[string]interface{}{"_id": userId}
-	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.UserCollectionName, filter, &user)
+	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.CollectionNameUser, filter, &user)
 	if err != nil {
 		log.Errorln(err)
 		return err

@@ -16,8 +16,19 @@ const (
 	ResetPasswordTokenKey          = "ResetPasswordToken:%s"
 	ResetPasswordTokenExpiry       = time.Minute * 5
 	MaxPasswordRetries             = 5
-	// MongoDatabaseName constants
+	//MongoDatabaseName constants
 
-	MongoDatabaseName  = "messages_db"
-	UserCollectionName = "users"
+	MongoDatabaseName                = "messages_db"
+	CollectionNameUser               = "users"
+	CollectionNameConversation       = "conversations"
+	CollectionNameConversationUnread = "conversation_unread"
+
+	CollectionNameMessages = "messages"
+
+	//ConversationType
+
+	ConversationTypeOne2One       = "individual"
+	ConversationTypeGroup         = "group"
+	ConversationLimit       int64 = 20
+	MessagesLimit           int64 = 50
 )

@@ -54,9 +54,11 @@ func (conversation *Conversation) GetConversations(log *zap.SugaredLogger, userI
 
 func (conversation *Conversation) CreateIndividualChat(log *zap.SugaredLogger) error {
 
-	user := system.UserProfile{}
+	var users []*system.UserContext
+
 	filter := map[string]interface{}{"_id": map[string]interface{}{"$in": conversation.Participants}}
-	users, err := user.GetUserByFilter(log, filter)
+
+	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameUser, filter, 0, 0, &users)
 	if err != nil {
 		log.Errorln(err)
 		return err

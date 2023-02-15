@@ -56,6 +56,14 @@ func (application *Application) Route(controller interface{}, controllerName str
 				response, err = json.Marshal(responseMap)
 			}
 
+			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+			c.Header("Access-Control-Allow-Headers", "*")
+			c.Header("Access-Control-Allow-Methods", "*")
+			if _, ok := c.Get("Content-Type"); ok {
+				c.Header("Content-Type", c.GetString("Content-Type"))
+			} else {
+				c.Header("Content-Type", c.GetHeader("Content-Type"))
+			}
 			c.Writer.WriteHeader(code)
 			c.Writer.Write(response)
 
@@ -89,16 +97,31 @@ func (application *Application) PerformanceMeasure() gin.HandlerFunc {
 
 		timeTakenByRequestInString := strconv.FormatInt(time.Since(c.GetTime(RequestStartTime)).Microseconds(), 10)
 
-		fmt.Printf("Request for url : %s is completed in %s microseconds with status %d.\n", c.Request.URL, timeTakenByRequestInString, c.Writer.Status())
+		fmt.Printf("Request for url : %s|%s is completed in %s microseconds with status %d.\n", c.Request.Method, c.Request.URL, timeTakenByRequestInString, c.Writer.Status())
 
 	}
+	return fn
+}
+
+func (application *Application) Cors() gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		if c.Request.Method == http.MethodOptions {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+			c.Writer.Header().Set("Access-Control-Allow-Headers", "*")
+			c.Writer.Header().Set("Access-Control-Allow-Methods", "*")
+			c.Status(http.StatusOK)
+			c.Writer.Write([]byte{})
+		} else {
+			c.Next()
+		}
+	}
+
 	return fn
 }
 
 func (application *Application) ApplyAuth() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		accessToken := getAccessTokenFromContext(c)
-
 		if len(accessToken) == 0 {
 			c.Set(AuthFailed, true)
 		} else {

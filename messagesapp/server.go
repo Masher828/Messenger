@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/Masher828/MessengerBackend/common-shared-package/conf"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
 	"github.com/Masher828/MessengerBackend/messagesapp/routes"
 	"github.com/gin-gonic/gin"
@@ -9,9 +10,15 @@ import (
 
 func main() {
 
-	//logger.Core().With([]zap.Field{{Key: "test", String: "value"}})
 	application := system.Application{}
-	err := system.PrepareMessengerContext()
+
+	err := conf.LoadConfigFile()
+	if err != nil {
+		fmt.Println("Error while loading config file : ", err.Error())
+		return
+	}
+
+	err = system.PrepareMessengerContext()
 	if err != nil {
 		fmt.Println("Error while preparing context : ", err.Error())
 		return
@@ -24,6 +31,8 @@ func main() {
 	routes.PrepareRoutes(app)
 
 	app.Use(gin.Recovery())
+
+	app.Use(application.Cors())
 
 	app.Use(application.ApplyAuth())
 

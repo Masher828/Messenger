@@ -3,8 +3,8 @@ package system
 import "errors"
 
 var (
-	ErrInternalServer = errors.New("internal server error")
-
+	ErrInternalServer  = errors.New("internal server error")
+	ErrNoMongoDocument = errors.New("mongo: no documents in result")
 	//Auth
 
 	ErrInvalidCredentials   = errors.New("invalid email & password")

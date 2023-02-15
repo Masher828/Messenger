@@ -199,7 +199,7 @@ func (controller *Controller) GetProfile(c *gin.Context, log *zap.SugaredLogger)
 
 	resp := response{}
 	resp.Success = true
-	resp.Data = user.UserProfile
+	resp.Data = user
 
 	return json.Marshal(resp)
 }

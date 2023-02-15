@@ -12,7 +12,7 @@ func GetSingleDocumentByFilter(log *zap.SugaredLogger, collectionName string, fi
 
 	collection := db.Database(system.MongoDatabaseName).Collection(collectionName)
 
-	err := collection.FindOne(context.TODO(), filter).Decode(&data)
+	err := collection.FindOne(context.TODO(), filter).Decode(data)
 	if err != nil {
 		log.Errorln(err)
 		return err

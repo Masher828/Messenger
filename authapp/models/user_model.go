@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	mongocommonrepo "github.com/Masher828/MessengerBackend/common-shared-package/mongo-common-repo"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
@@ -15,7 +16,16 @@ type RequestUser struct {
 }
 
 type User struct {
-	system.UserProfile
+	Id                     string `json:"id" bson:"_id"`
+	FirstName              string `json:"firstName" binding:"required,min=2,max=200" bson:"firstName"`
+	LastName               string `json:"lastName,omitempty" binding:"max=200" bson:"lastName,omitempty"`
+	EmailId                string `json:"emailId" binding:"required,email,min=5,max=200" bson:"emailId"`
+	Phone                  string `json:"phone,omitempty" bson:"phone,omitempty"`
+	Status                 string `json:"status,omitempty" bson:"status,omitempty"`
+	Gender                 string `json:"gender" binding:"max=20" bson:"gender"`
+	UpdatedOn              int64  `json:"updatedOn" bson:"updatedOn"`
+	CreatedOn              int64  `json:"createdOn" bson:"createdOn"`
+	LastLogin              int64  `json:"lastLoginOn" bson:"lastLoginOn"`
 	Deleted                bool   `json:"deleted,omitempty" bson:"deleted,omitempty"`
 	Password               string `json:"password" binding:"required,alphanum,min=8,max=200" bson:"password"`
 	Salt                   []byte `json:"salt" bson:"salt"`
@@ -35,7 +45,7 @@ func (user *User) Insert(log *zap.SugaredLogger) error {
 		return err
 	}
 
-	if emailExists {
+	if !emailExists {
 		err = system.ErrEmailAlreadyExists
 		return err
 	}
@@ -148,7 +158,8 @@ func (user *User) GetUserContextDetails() *system.UserContext {
 
 	userContext.UserId = user.Id
 	userContext.AccessToken = user.AccessToken
-	userContext.Name = user.FirstName + " " + user.LastName
+	userContext.FirstName = user.FirstName + " " + user.LastName
+	userContext.LastName = user.LastName
 
 	return &userContext
 }
@@ -157,7 +168,8 @@ func (user *User) AddAccessTokenToUser(log *zap.SugaredLogger) error {
 	db := system.MessengerContext.Redis
 
 	key := fmt.Sprintf(system.AccessTokenToUser, user.AccessToken)
-	err := db.Set(context.TODO(), key, user.GetUserContextDetails(), system.DefaultAccessTokenExpiry).Err()
+	data, _ := json.Marshal(user.GetUserContextDetails())
+	err := db.Set(context.TODO(), key, data, system.DefaultAccessTokenExpiry).Err()
 	if err != nil {
 		log.Errorln(err)
 		return err
@@ -179,6 +191,9 @@ func (user *User) SignIn(log *zap.SugaredLogger, emailId, password string) (*sys
 
 	err := user.SetUserByEmail(log, emailId)
 	if err != nil {
+		if err.Error() == system.ErrNoMongoDocument.Error() {
+			err = system.ErrInvalidCredentials
+		}
 		log.Errorln(err)
 		return nil, err
 	}

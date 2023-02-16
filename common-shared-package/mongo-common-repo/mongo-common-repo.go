@@ -66,7 +66,7 @@ func GetDocumentCountsByFilter(log *zap.SugaredLogger, collectionName string, fi
 
 }
 
-func GetDocumentsWithFilter(log *zap.SugaredLogger, collectionName string, filter map[string]interface{}, offset, limit int64, data interface{}) error {
+func GetDocumentsWithFilter(log *zap.SugaredLogger, collectionName string, filter map[string]interface{}, offset, limit int64, data interface{}, sortOrder int) error {
 
 	db := system.MessengerContext.MongoDB
 
@@ -81,7 +81,7 @@ func GetDocumentsWithFilter(log *zap.SugaredLogger, collectionName string, filte
 		opts.SetLimit(limit)
 	}
 
-	opts.SetSort(map[string]interface{}{"createdOn": -1})
+	opts.SetSort(map[string]interface{}{"createdOn": sortOrder})
 
 	cursor, err := collection.Find(context.TODO(), filter, &opts)
 	if err != nil {

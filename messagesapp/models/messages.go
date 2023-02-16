@@ -35,7 +35,7 @@ func (message *Message) getMessageWithFilter(log *zap.SugaredLogger, filter map[
 
 	var messagesList []*Message
 
-	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameMessages, filter, offset, limit, &messagesList)
+	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameMessages, filter, offset, limit, &messagesList, 1)
 	if err != nil {
 		log.Errorln(err)
 		return nil, err

@@ -41,7 +41,12 @@ func (controller *Controller) SendMessage(c *gin.Context, log *zap.SugaredLogger
 		return nil, err
 	}
 
-	resp := response{Success: true}
+	messages, err := conversation.GetMessages(log, 0, system.MessagesLimit)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+	resp := response{Success: true, Data: messages}
 	return json.Marshal(resp)
 }
 

@@ -123,7 +123,8 @@ func (user *User) SetUserByEmail(log *zap.SugaredLogger, email string) error {
 func (user *User) SetUserById(log *zap.SugaredLogger, userId string) error {
 
 	filter := map[string]interface{}{"_id": userId}
-	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.CollectionNameUser, filter, &user)
+	selectedFields := map[string]interface{}{"name": 1, "emailId": 1, "createdOn": 1, "updatedOn": 1, "phone": 1, "status": 1, "gender": 1}
+	err := mongocommonrepo.GetSelectedFieldsDocumentsWithFilter(log, system.CollectionNameUser, selectedFields, filter, 0, 1, &user)
 	if err != nil {
 		log.Errorln(err)
 		return err

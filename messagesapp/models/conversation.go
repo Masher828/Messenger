@@ -36,7 +36,7 @@ func (conversation *Conversation) ValidateIndividualConversation(log *zap.Sugare
 	}
 
 	var conv Conversation
-	filter := map[string]interface{}{"participants": map[string]interface{}{"$in": conversation.Participants}, "conversationType": system.ConversationTypeOne2One}
+	filter := map[string]interface{}{"participants": map[string]interface{}{"$all": conversation.Participants}, "conversationType": system.ConversationTypeOne2One}
 	err := mongo_common_repo.GetSingleDocumentByFilter(log, system.CollectionNameConversation, filter, &conv)
 	if err != nil && err != mongo.ErrNoDocuments {
 		log.Errorln(err)
@@ -91,7 +91,7 @@ func (conversation *Conversation) CreateIndividualChat(log *zap.SugaredLogger) e
 
 	filter := map[string]interface{}{"_id": map[string]interface{}{"$in": conversation.Participants}}
 
-	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameUser, filter, 0, 0, &users)
+	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameUser, filter, 0, 0, &users, -1)
 	if err != nil {
 		log.Errorln(err)
 		return err
@@ -310,7 +310,7 @@ func (conversation *Conversation) UpdateRecentMessage(log *zap.SugaredLogger) er
 func (conversation *Conversation) GetConversationsWithFilter(log *zap.SugaredLogger, filter map[string]interface{}, offset, limit int64) ([]*Conversation, error) {
 	var conversations []*Conversation
 
-	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameConversation, filter, offset, limit, &conversations)
+	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameConversation, filter, offset, limit, &conversations, -1)
 	if err != nil {
 		log.Errorln(err)
 		return nil, err

@@ -17,6 +17,7 @@ var (
 
 	//Conversation
 
+	ErrConversationAlreadyExist        = errors.New("conversation already exist")
 	ErrInvalidConversationType         = errors.New("invalid conversation type")
 	ErrInvalidConversationParticipants = errors.New("invalid conversation participants")
 	ErrNotMemberOfConversation         = errors.New("user is not part of the conversation")

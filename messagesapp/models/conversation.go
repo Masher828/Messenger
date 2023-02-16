@@ -1,9 +1,11 @@
 package models
 
 import (
+	"errors"
 	mongo_common_repo "github.com/Masher828/MessengerBackend/common-shared-package/mongo-common-repo"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 )
 
@@ -24,19 +26,39 @@ type Conversation struct {
 	UpdatedOn        int64    `json:"updatedOn" bson:"updatedOn"`
 }
 
-func (conversation *Conversation) Validate(log *zap.SugaredLogger) error {
-	if len(conversation.Participants) <= 1 && conversation.Type == system.ConversationTypeGroup {
-		err := system.ErrGroupConversationMinimumOneUser
-		log.Errorln(err)
-		return err
-	}
+func (conversation *Conversation) ValidateIndividualConversation(log *zap.SugaredLogger) error {
 
 	if len(conversation.ParticipantsName) == 0 && conversation.Type == system.ConversationTypeOne2One {
 		err := system.ErrOne2OneConversationNoName
 		log.Errorln(err)
 		return err
 	}
+
+	var conv Conversation
+	filter := map[string]interface{}{"participants": map[string]interface{}{"$in": conversation.Participants}, "conversationType": system.ConversationTypeOne2One}
+	err := mongo_common_repo.GetSingleDocumentByFilter(log, system.CollectionNameConversation, filter, &conv)
+	if err != nil && err != mongo.ErrNoDocuments {
+		log.Errorln(err)
+		return err
+	}
+
+	if len(conv.Id) != 0 {
+		conversation.Id = conv.Id
+		err = system.ErrConversationAlreadyExist
+		return err
+	}
+
 	return nil
+}
+
+func (conversation *Conversation) ValidateGroupConversation(log *zap.SugaredLogger) error {
+	if len(conversation.Participants) <= 1 && conversation.Type == system.ConversationTypeGroup {
+		err := system.ErrGroupConversationMinimumOneUser
+		log.Errorln(err)
+		return err
+	}
+
+	return errors.New("fake")
 }
 
 func (conversation *Conversation) SetConversationById(log *zap.SugaredLogger) error {
@@ -79,10 +101,21 @@ func (conversation *Conversation) CreateIndividualChat(log *zap.SugaredLogger) e
 		conversation.ParticipantsName = append(conversation.ParticipantsName, name)
 	}
 
+	err = conversation.ValidateIndividualConversation(log)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
 	return nil
 }
 
 func (conversation *Conversation) CreateGroup(log *zap.SugaredLogger) error {
+
+	err := conversation.ValidateGroupConversation(log)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
 
 	return nil
 }
@@ -115,7 +148,7 @@ func (conversation *Conversation) SendMessage(log *zap.SugaredLogger, message *M
 		conversation.Type = system.ConversationTypeOne2One
 		conversation.Participants = []string{message.SenderId, message.ReceiverId}
 		err := conversation.Create(log)
-		if err != nil {
+		if err != nil && err != system.ErrConversationAlreadyExist {
 			log.Errorln(err)
 			return err
 		}

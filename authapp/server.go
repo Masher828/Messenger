@@ -27,13 +27,13 @@ func main() {
 
 	app.Use(application.PerformanceMeasure())
 
-	routes.PrepareRoutes(app)
-
 	app.Use(gin.Recovery())
 
 	app.Use(application.Cors())
 
 	app.Use(application.ApplyAuth())
+
+	routes.PrepareRoutes(app)
 
 	port := ":" + conf.MessengerConfig.Apps.Auth.Address
 	err = app.Run(port)

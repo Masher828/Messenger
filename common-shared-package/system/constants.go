@@ -30,5 +30,6 @@ const (
 	ConversationTypeOne2One       = "individual"
 	ConversationTypeGroup         = "group"
 	ConversationLimit       int64 = 20
+	UsersLimit              int64 = 10
 	MessagesLimit           int64 = 50
 )

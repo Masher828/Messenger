@@ -100,6 +100,41 @@ func GetDocumentsWithFilter(log *zap.SugaredLogger, collectionName string, filte
 	return err
 }
 
+func GetSelectedFieldsDocumentsWithFilter(log *zap.SugaredLogger, collectionName string, selectedFields, filter map[string]interface{}, offset, limit int64, data interface{}) error {
+
+	db := system.MessengerContext.MongoDB
+
+	collection := db.Database(system.MongoDatabaseName).Collection(collectionName)
+
+	opts := options.FindOptions{}
+	if offset > 0 {
+		opts.SetSkip(offset)
+	}
+
+	if limit > 0 {
+		opts.SetLimit(limit)
+	}
+
+	opts.SetSort(map[string]interface{}{"createdOn": -1})
+	opts.SetProjection(selectedFields)
+
+	cursor, err := collection.Find(context.TODO(), filter, &opts)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	defer cursor.Close(context.TODO())
+
+	err = cursor.All(context.TODO(), data)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return err
+}
+
 func UpsertDocumentCustomQuery(log *zap.SugaredLogger, collectionName string, filter, updateQuery map[string]interface{}) error {
 
 	db := system.MessengerContext.MongoDB

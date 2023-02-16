@@ -90,7 +90,7 @@ func (application *Application) Recovery(c *gin.Context) {
 
 func (application *Application) PerformanceMeasure() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
-		fmt.Println("Request for url : "+c.Request.URL.RequestURI()+" is started at .\n", c.Request.URL, NowInUTC())
+		fmt.Println("Request for url : "+c.Request.URL.RequestURI()+" is started at ", c.Request.URL, NowInUTC())
 		c.Set(RequestStartTime, NowInUTC())
 
 		c.Next()

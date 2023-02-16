@@ -17,8 +17,9 @@ func PrepareRoutes(router *gin.Engine) {
 
 	//profile
 
+	router.GET("/auth/user/search", application.Route(&controller.Controller{}, "SearchUser", true))
 	router.POST("/auth/password/reset", application.Route(&controller.Controller{}, "ResetPassword", true))
-	router.POST("/auth/password/update", application.Route(&controller.Controller{}, "UpdatePassword", true))
+	router.POST("/auth/password/update", application.Route(&controller.Controller{}, "UpdatePassword", false))
 	router.PUT("/auth/profile", application.Route(&controller.Controller{}, "UpdateProfile", false))
 	router.PUT("/auth/status/:status", application.Route(&controller.Controller{}, "UpdateStatus", false))
 	router.GET("/auth/profile", application.Route(&controller.Controller{}, "GetProfile", false))

@@ -203,3 +203,25 @@ func (controller *Controller) GetProfile(c *gin.Context, log *zap.SugaredLogger)
 
 	return json.Marshal(resp)
 }
+
+func (controller *Controller) SearchUser(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
+	userContext := system.GetUserContextFromGinContext(c)
+	if userContext == nil {
+		err := system.ErrUnauthorizedAccess
+		log.Errorln(err)
+		return nil, err
+	}
+
+	searchQuery := c.Query("searchQuery")
+	offset, limit := system.GetOffsetAndLimitFromContext(c, system.UsersLimit)
+	var user models.User
+	users, err := user.SearchUsers(log, searchQuery, userContext.UserId, offset, limit)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	resp := response{Data: users, Success: true}
+
+	return json.Marshal(resp)
+}

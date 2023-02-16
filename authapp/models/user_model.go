@@ -7,7 +7,10 @@ import (
 	mongocommonrepo "github.com/Masher828/MessengerBackend/common-shared-package/mongo-common-repo"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.uber.org/zap"
+	"regexp"
 )
 
 type RequestUser struct {
@@ -17,21 +20,20 @@ type RequestUser struct {
 
 type User struct {
 	Id                     string `json:"id" bson:"_id"`
-	FirstName              string `json:"firstName" binding:"required,min=2,max=200" bson:"firstName"`
-	LastName               string `json:"lastName,omitempty" binding:"max=200" bson:"lastName,omitempty"`
-	EmailId                string `json:"emailId" binding:"required,email,min=5,max=200" bson:"emailId"`
+	Name                   string `json:"name,omitempty" bson:"name,omitempty"`
+	EmailId                string `json:"emailId,omitempty" binding:"required,email,min=5,max=200" bson:"emailId,omitempty"`
 	Phone                  string `json:"phone,omitempty" bson:"phone,omitempty"`
 	Status                 string `json:"status,omitempty" bson:"status,omitempty"`
-	Gender                 string `json:"gender" binding:"max=20" bson:"gender"`
-	UpdatedOn              int64  `json:"updatedOn" bson:"updatedOn"`
-	CreatedOn              int64  `json:"createdOn" bson:"createdOn"`
-	LastLogin              int64  `json:"lastLoginOn" bson:"lastLoginOn"`
+	Gender                 string `json:"gender,omitempty" binding:"max=20" bson:"gender,omitempty"`
+	UpdatedOn              int64  `json:"updatedOn,omitempty" bson:"updatedOn,omitempty"`
+	CreatedOn              int64  `json:"createdOn,omitempty" bson:"createdOn,omitempty"`
+	LastLogin              int64  `json:"lastLoginOn,omitempty" bson:"lastLoginOn,omitempty"`
 	Deleted                bool   `json:"deleted,omitempty" bson:"deleted,omitempty"`
-	Password               string `json:"password" binding:"required,alphanum,min=8,max=200" bson:"password"`
-	Salt                   []byte `json:"salt" bson:"salt"`
+	Password               string `json:"password,omitempty" binding:"required,alphanum,min=8,max=200" bson:"password,omitempty"`
+	Salt                   []byte `json:"salt,omitempty" bson:"salt,omitempty"`
 	InCorrectPasswordCount int    `json:"inCorrectPasswordCount,omitempty" bson:"inCorrectPasswordCount,omitempty"`
-	IsLocked               bool   `json:"isLocked" bson:"isLocked"`
-	AccessToken            string
+	IsLocked               bool   `json:"isLocked,omitempty" bson:"isLocked,omitempty"`
+	AccessToken            string `json:"-"`
 
 	// To reset password
 	ResetPasswordToken string `json:"resetPasswordToken,omitempty"`
@@ -158,8 +160,7 @@ func (user *User) GetUserContextDetails() *system.UserContext {
 
 	userContext.UserId = user.Id
 	userContext.AccessToken = user.AccessToken
-	userContext.FirstName = user.FirstName + " " + user.LastName
-	userContext.LastName = user.LastName
+	userContext.Name = user.Name
 
 	return &userContext
 }
@@ -262,6 +263,36 @@ func (user *User) UpdatePassword(log *zap.SugaredLogger) error {
 	}
 
 	return nil
+}
+
+func (user *User) SearchUsers(log *zap.SugaredLogger, searchQuery string, userId string, offset, limit int64) ([]*User, error) {
+
+	searchQuery = "^" + regexp.QuoteMeta(searchQuery) + ".*"
+
+	nameFilter := map[string]interface{}{"name": bson.M{"$regex": bsonx.Regex(searchQuery, "i")}}
+	emailFilter := map[string]interface{}{"emailId": bson.M{"$regex": bsonx.Regex(searchQuery, "i")}}
+	filter := map[string]interface{}{"$or": []map[string]interface{}{nameFilter, emailFilter}, "_id": map[string]interface{}{"$ne": userId}}
+
+	selectedFields := map[string]interface{}{"name": 1, "emailId": 1}
+
+	users, err := user.GetSelectedFieldsWithFilter(log, selectedFields, filter, offset, limit)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (user *User) GetSelectedFieldsWithFilter(log *zap.SugaredLogger, selectedFields, filter map[string]interface{}, offset, limit int64) ([]*User, error) {
+	var users []*User
+	err := mongocommonrepo.GetSelectedFieldsDocumentsWithFilter(log, system.CollectionNameUser, selectedFields, filter, offset, limit, &users)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	return users, nil
 }
 
 func (user *User) ResetPassword(log *zap.SugaredLogger) (string, error) {

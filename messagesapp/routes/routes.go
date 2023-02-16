@@ -12,6 +12,7 @@ func PrepareRoutes(router *gin.Engine) {
 
 	router.POST("/messenger/messages/send", application.Route(&controller.Controller{}, "SendMessage", false))
 	router.POST("/messenger/:conversationId/messages/list", application.Route(&controller.Controller{}, "GetMessagesForConversation", false))
+	router.POST("/messenger/messages/:friendId", application.Route(&controller.Controller{}, "GetMessagesWithFriend", false))
 
 	router.POST("/messenger/conversations", application.Route(&controller.Controller{}, "GetOrCreateConversation", true))
 

@@ -65,11 +65,7 @@ func (conversation *Conversation) CreateIndividualChat(log *zap.SugaredLogger) e
 	}
 
 	for _, user := range users {
-		name := user.FirstName
-		if len(user.LastName) > 0 {
-			name += " " + user.LastName
-		}
-
+		name := user.Name
 		conversation.ParticipantsName = append(conversation.ParticipantsName, name)
 	}
 
@@ -132,6 +128,28 @@ func (conversation *Conversation) SendMessage(log *zap.SugaredLogger, message *M
 	return nil
 }
 
+func (conversation *Conversation) GetMessagesWithFriend(log *zap.SugaredLogger, userIds []string) ([]*Message, error) {
+	filter := map[string]interface{}{"participants": map[string]interface{}{"$all": userIds}, "type": system.ConversationTypeOne2One}
+
+	conversations, err := conversation.GetConversationsWithFilter(log, filter, 0, 1)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	var messages []*Message
+	if len(conversations) != 0 {
+		conversation = conversations[0]
+		messages, err = conversation.GetMessages(log, 0, system.MessagesLimit)
+		if err != nil {
+			log.Errorln(err)
+			return nil, err
+		}
+	}
+
+	return messages, err
+}
+
 func (conversation *Conversation) GetMessages(log *zap.SugaredLogger, offset, limit int64) ([]*Message, error) {
 	message := Message{ConversationId: conversation.Id}
 	messages, err := message.Get(log, offset, limit)
@@ -157,8 +175,29 @@ func (conversation *Conversation) SendNotificationToParticipants(log *zap.Sugare
 	return nil
 }
 
+func (conversation *Conversation) ValidateConversation(log *zap.SugaredLogger) error {
+	filter := map[string]interface{}{"_id": map[string]interface{}{"$in": conversation.Participants}}
+	count, err := mongo_common_repo.GetDocumentCountsByFilter(log, system.CollectionNameUser, filter)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	if count != int64(len(conversation.Participants)) {
+		err = system.ErrInvalidConversationParticipants
+		log.Errorln(err)
+		return err
+	}
+
+	return nil
+}
+
 func (conversation *Conversation) Create(log *zap.SugaredLogger) error {
-	var err error = nil
+	err := conversation.ValidateConversation(log)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
 
 	if !system.ContainsString(conversation.Participants, conversation.CreatedBy) {
 		conversation.Participants = append(conversation.Participants, conversation.CreatedBy)

@@ -16,6 +16,7 @@ var (
 	//Conversation
 
 	ErrInvalidConversationType         = errors.New("invalid conversation type")
+	ErrInvalidConversationParticipants = errors.New("invalid conversation participants")
 	ErrNotMemberOfConversation         = errors.New("user is not part of the conversation")
 	ErrInvalidConversationId           = errors.New("invalid conversation id")
 	ErrGroupConversationMinimumOneUser = errors.New("please add more users to create group conversation")

@@ -19,6 +19,12 @@ type response struct {
 func (controller *Controller) SendMessage(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
 
 	userContext := system.GetUserContextFromGinContext(c)
+	if userContext == nil {
+		err := system.ErrUnauthorizedAccess
+		log.Errorln(err)
+		return nil, err
+	}
+
 	data := models.Message{}
 	err := c.Bind(&data)
 	if err != nil {
@@ -40,6 +46,13 @@ func (controller *Controller) SendMessage(c *gin.Context, log *zap.SugaredLogger
 }
 
 func (controller *Controller) GetMessagesForConversation(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
+
+	userContext := system.GetUserContextFromGinContext(c)
+	if userContext == nil {
+		err := system.ErrUnauthorizedAccess
+		log.Errorln(err)
+		return nil, err
+	}
 
 	conversationId := c.Param("conversationId")
 	if len(conversationId) != 0 {
@@ -64,6 +77,11 @@ func (controller *Controller) GetMessagesForConversation(c *gin.Context, log *za
 func (controller *Controller) GetConversation(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
 
 	userContext := system.GetUserContextFromGinContext(c)
+	if userContext == nil {
+		err := system.ErrUnauthorizedAccess
+		log.Errorln(err)
+		return nil, err
+	}
 
 	offset, limit := system.GetOffsetAndLimitFromContext(c, system.ConversationLimit)
 
@@ -77,5 +95,33 @@ func (controller *Controller) GetConversation(c *gin.Context, log *zap.SugaredLo
 	}
 
 	resp := response{Success: true, Data: conversations}
+	return json.Marshal(resp)
+}
+
+func (controller *Controller) GetMessagesWithFriend(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
+
+	userContext := system.GetUserContextFromGinContext(c)
+	if userContext == nil {
+		err := system.ErrUnauthorizedAccess
+		log.Errorln(err)
+		return nil, err
+	}
+
+	friendId := c.Param("friendId")
+
+	var participants = []string{userContext.UserId, friendId}
+
+	var conversation models.Conversation
+	messages, err := conversation.GetMessagesWithFriend(log, participants)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	resp := response{
+		Success: true,
+		Data:    messages,
+	}
+
 	return json.Marshal(resp)
 }

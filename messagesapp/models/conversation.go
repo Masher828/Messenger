@@ -18,6 +18,7 @@ type ConversationUnreadCount struct {
 type Conversation struct {
 	Id               string   `json:"id" bson:"_id"`
 	Name             string   `json:"name" bson:"name"`
+	RecentMessage    string   `json:"recentMessage,omitempty" bson:"recentMessage,omitempty"`
 	ParticipantsName []string `json:"participantsName" bson:"participantsName"` //only for system.ConversationTypeOne2One
 	Participants     []string `json:"participants" bson:"participants"`
 	Type             string   `json:"conversationType" bson:"conversationType"`
@@ -167,12 +168,18 @@ func (conversation *Conversation) SendMessage(log *zap.SugaredLogger, message *M
 		}
 	}
 
+	conversation.RecentMessage = message.Body
 	err := message.Send(log)
 	if err != nil {
 		log.Errorln(err)
 		return err
 	}
-
+	go func() {
+		err = conversation.UpdateRecentMessage(log)
+		if err != nil {
+			log.Errorln(err)
+		}
+	}()
 	err = conversation.SendNotificationToParticipants(log, message.SenderId)
 	if err != nil {
 		log.Errorln(err)
@@ -289,6 +296,17 @@ func (conversation *Conversation) Create(log *zap.SugaredLogger) error {
 	return nil
 }
 
+func (conversation *Conversation) UpdateRecentMessage(log *zap.SugaredLogger) error {
+	filter := map[string]interface{}{"_id": conversation.Id}
+	dataToUpdate := map[string]interface{}{"recentMessage": conversation.RecentMessage}
+	err := mongo_common_repo.UpdateDocumentByFilter(log, system.CollectionNameConversation, filter, dataToUpdate)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return nil
+}
 func (conversation *Conversation) GetConversationsWithFilter(log *zap.SugaredLogger, filter map[string]interface{}, offset, limit int64) ([]*Conversation, error) {
 	var conversations []*Conversation
 

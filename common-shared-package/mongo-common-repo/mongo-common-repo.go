@@ -166,3 +166,17 @@ func DeleteSingleDocumentByFilter(log *zap.SugaredLogger, collectionName string,
 
 	return nil
 }
+
+func UpdateDocumentByFilter(log *zap.SugaredLogger, collectionName string, filter, dataToUpdate map[string]interface{}) error {
+	db := system.MessengerContext.MongoDB
+
+	collection := db.Database(system.MongoDatabaseName).Collection(collectionName)
+
+	dataToBeUpdated := map[string]interface{}{"$set": dataToUpdate}
+	_, err := collection.UpdateMany(context.TODO(), filter, dataToBeUpdated)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+	return nil
+}

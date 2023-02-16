@@ -91,7 +91,7 @@ func GetDocumentsWithFilter(log *zap.SugaredLogger, collectionName string, filte
 
 	defer cursor.Close(context.TODO())
 
-	err = cursor.All(context.TODO(), &data)
+	err = cursor.All(context.TODO(), data)
 	if err != nil {
 		log.Errorln(err)
 		return err

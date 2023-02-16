@@ -15,6 +15,8 @@ type Message struct {
 	MessageType    string `json:"messageType" bson:"messageType"`
 	CreatedOn      int64  `json:"createdOn" bson:"createdOn"`
 	UpdatedOn      int64  `json:"updatedOn" bson:"updatedOn"`
+
+	ReceiverId string `json:"receiverId,omitempty"` //only for the first message of conversation and will not be stored oin the db. Used to create conversation
 }
 
 func (message *Message) Get(log *zap.SugaredLogger, offset, limit int64) ([]*Message, error) {

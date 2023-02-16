@@ -116,7 +116,6 @@ func GetUserContextFromGinContext(c *gin.Context) *UserContext {
 
 func GetUserContextFromAccessToken(accessToken string) (*UserContext, error) {
 	db := MessengerContext.Redis
-
 	result := db.Get(context.TODO(), fmt.Sprintf(AccessTokenToUser, accessToken))
 
 	if result.Err() != nil {

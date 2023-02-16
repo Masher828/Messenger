@@ -55,7 +55,7 @@ func (controller *Controller) GetMessagesForConversation(c *gin.Context, log *za
 	}
 
 	conversationId := c.Param("conversationId")
-	if len(conversationId) != 0 {
+	if len(conversationId) == 0 {
 		err := system.ErrInvalidConversationId
 		log.Errorln(err)
 		return nil, err
@@ -74,7 +74,7 @@ func (controller *Controller) GetMessagesForConversation(c *gin.Context, log *za
 	return json.Marshal(resp)
 }
 
-func (controller *Controller) GetConversation(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
+func (controller *Controller) GetConversations(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
 
 	userContext := system.GetUserContextFromGinContext(c)
 	if userContext == nil {

@@ -39,6 +39,16 @@ func (conversation *Conversation) Validate(log *zap.SugaredLogger) error {
 	return nil
 }
 
+func (conversation *Conversation) SetConversationById(log *zap.SugaredLogger) error {
+	err := mongo_common_repo.GetSingleDocumentByFilter(log, system.CollectionNameConversation, map[string]interface{}{"_id": conversation.Id}, &conversation)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return nil
+}
+
 func (conversation *Conversation) GetConversations(log *zap.SugaredLogger, userId string, offset, limit int64) ([]*Conversation, error) {
 
 	filter := map[string]interface{}{"participants": userId}
@@ -102,16 +112,26 @@ func (conversation *Conversation) SendMessage(log *zap.SugaredLogger, message *M
 
 	if len(conversation.Id) == 0 {
 		conversation.CreatedBy = message.SenderId
-
+		conversation.Type = system.ConversationTypeOne2One
+		conversation.Participants = []string{message.SenderId, message.ReceiverId}
 		err := conversation.Create(log)
 		if err != nil {
 			log.Errorln(err)
 			return err
 		}
-	} else if !conversation.IsParticipant(log, message.SenderId) {
-		err := system.ErrNotMemberOfConversation
-		log.Errorln(err)
-		return err
+		message.ConversationId = conversation.Id
+	} else {
+		err := conversation.SetConversationById(log)
+		if err != nil {
+			log.Errorln(err)
+			return err
+		}
+
+		if !conversation.IsParticipant(log, message.SenderId) {
+			err := system.ErrNotMemberOfConversation
+			log.Errorln(err)
+			return err
+		}
 	}
 
 	err := message.Send(log)
@@ -176,6 +196,7 @@ func (conversation *Conversation) SendNotificationToParticipants(log *zap.Sugare
 }
 
 func (conversation *Conversation) ValidateConversation(log *zap.SugaredLogger) error {
+
 	filter := map[string]interface{}{"_id": map[string]interface{}{"$in": conversation.Participants}}
 	count, err := mongo_common_repo.GetDocumentCountsByFilter(log, system.CollectionNameUser, filter)
 	if err != nil {
@@ -238,7 +259,7 @@ func (conversation *Conversation) Create(log *zap.SugaredLogger) error {
 func (conversation *Conversation) GetConversationsWithFilter(log *zap.SugaredLogger, filter map[string]interface{}, offset, limit int64) ([]*Conversation, error) {
 	var conversations []*Conversation
 
-	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameConversation, filter, offset, limit, conversations)
+	err := mongo_common_repo.GetDocumentsWithFilter(log, system.CollectionNameConversation, filter, offset, limit, &conversations)
 	if err != nil {
 		log.Errorln(err)
 		return nil, err
@@ -253,7 +274,9 @@ func (conversation *Conversation) RemoveUser(log *zap.SugaredLogger) {
 
 func (conversation *Conversation) SearchConversationByName(log *zap.SugaredLogger, searchQuery string, userId string, offset, limit int64) ([]*Conversation, error) {
 	filter := map[string]interface{}{"participants": userId}
-	filter["$or"] = []map[string]interface{}{{"participantsName": searchQuery}, {"name": searchQuery}}
+	if len(searchQuery) > 0 {
+		filter["$or"] = []map[string]interface{}{{"participantsName": searchQuery}, {"name": searchQuery}}
+	}
 
 	conversations, err := conversation.GetConversationsWithFilter(log, filter, offset, limit)
 	if err != nil {

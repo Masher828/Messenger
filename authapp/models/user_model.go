@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.uber.org/zap"
 	"regexp"
+	"strings"
 )
 
 type RequestUser struct {
@@ -41,6 +42,7 @@ type User struct {
 
 func (user *User) Insert(log *zap.SugaredLogger) error {
 
+	user.EmailId = strings.ToLower(user.EmailId)
 	emailExists, err := user.IsEmailUnique(log)
 	if err != nil {
 		log.Errorln(err)
@@ -107,6 +109,7 @@ func (user *User) IsEmailUnique(log *zap.SugaredLogger) (bool, error) {
 
 func (user *User) SetUserByEmail(log *zap.SugaredLogger, email string) error {
 
+	email = strings.ToLower(email)
 	filter := map[string]interface{}{"emailId": email}
 	err := mongocommonrepo.GetSingleDocumentByFilter(log, system.CollectionNameUser, filter, &user)
 	if err != nil {
@@ -190,6 +193,7 @@ func (user *User) encryptedPassword(log *zap.SugaredLogger) error {
 
 func (user *User) SignIn(log *zap.SugaredLogger, emailId, password string) (*system.UserContext, error) {
 
+	emailId = strings.ToLower(emailId)
 	err := user.SetUserByEmail(log, emailId)
 	if err != nil {
 		if err.Error() == system.ErrNoMongoDocument.Error() {

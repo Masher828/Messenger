@@ -1,6 +1,8 @@
 package system
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrInternalServer  = errors.New("internal server error")

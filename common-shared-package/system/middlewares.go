@@ -26,17 +26,22 @@ func (application *Application) Route(controller interface{}, controllerName str
 
 		//if url is not public and authentication is failed then return 401
 		if !isPublic && (!ok || authFailed.(bool)) {
-			c.Redirect(http.StatusUnauthorized, "/")
+			c.Writer.WriteHeader(http.StatusUnauthorized)
 		} else {
-			var user UserContext
+			var user *UserContext
+			var userid string
 			if !isPublic {
 				userInterface, ok := c.Get(AuthUserContext)
 				if !ok {
 					c.Redirect(http.StatusUnauthorized, "/")
 				}
-				user = userInterface.(UserContext)
+				user = userInterface.(*UserContext)
 			}
-			logger := log.GetDefaultLogger(user.UserId, c.Request.RequestURI, c.Request.Method)
+
+			if user != nil {
+				userid = user.UserId
+			}
+			logger := log.GetDefaultLogger(userid, c.Request.RequestURI, c.Request.Method)
 
 			methodInterface := reflect.ValueOf(controller).MethodByName(controllerName).Interface()
 

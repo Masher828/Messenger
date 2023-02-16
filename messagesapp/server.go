@@ -28,15 +28,15 @@ func main() {
 
 	app.Use(application.PerformanceMeasure())
 
-	routes.PrepareRoutes(app)
-
 	app.Use(gin.Recovery())
 
 	app.Use(application.Cors())
 
 	app.Use(application.ApplyAuth())
 
-	port := ":8082"
+	routes.PrepareRoutes(app)
+
+	port := ":" + conf.MessengerConfig.Apps.Service.Address
 	err = app.Run(port)
 	if err != nil {
 		fmt.Printf("Error while listening on port : %s\n", port)

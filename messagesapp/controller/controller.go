@@ -103,7 +103,7 @@ func (controller *Controller) GetConversations(c *gin.Context, log *zap.SugaredL
 	return json.Marshal(resp)
 }
 
-func (controller *Controller) GetMessagesWithFriend(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
+func (controller *Controller) GetConversationWithFriend(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
 
 	userContext := system.GetUserContextFromGinContext(c)
 	if userContext == nil {
@@ -116,8 +116,8 @@ func (controller *Controller) GetMessagesWithFriend(c *gin.Context, log *zap.Sug
 
 	var participants = []string{userContext.UserId, friendId}
 
-	var conversation models.Conversation
-	messages, err := conversation.GetMessagesWithFriend(log, participants)
+	var conv models.Conversation
+	conversation, err := conv.GetConversationWithFriend(log, participants)
 	if err != nil {
 		log.Errorln(err)
 		return nil, err
@@ -125,7 +125,33 @@ func (controller *Controller) GetMessagesWithFriend(c *gin.Context, log *zap.Sug
 
 	resp := response{
 		Success: true,
-		Data:    messages,
+		Data:    conversation,
+	}
+
+	return json.Marshal(resp)
+}
+
+func (controller *Controller) GetConversationById(c *gin.Context, log *zap.SugaredLogger) ([]byte, error) {
+	userContext := system.GetUserContextFromGinContext(c)
+	if userContext == nil {
+		err := system.ErrUnauthorizedAccess
+		log.Errorln(err)
+		return nil, err
+	}
+
+	conversationId := c.Param("conversationId")
+
+	conversation := models.Conversation{Id: conversationId}
+
+	err := conversation.SetConversationById(log, userContext.UserId)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
+	resp := response{
+		Success: true,
+		Data:    conversation,
 	}
 
 	return json.Marshal(resp)

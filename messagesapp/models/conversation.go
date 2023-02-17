@@ -62,8 +62,8 @@ func (conversation *Conversation) ValidateGroupConversation(log *zap.SugaredLogg
 	return errors.New("fake")
 }
 
-func (conversation *Conversation) SetConversationById(log *zap.SugaredLogger) error {
-	err := mongo_common_repo.GetSingleDocumentByFilter(log, system.CollectionNameConversation, map[string]interface{}{"_id": conversation.Id}, &conversation)
+func (conversation *Conversation) SetConversationById(log *zap.SugaredLogger, userId string) error {
+	err := mongo_common_repo.GetSingleDocumentByFilter(log, system.CollectionNameConversation, map[string]interface{}{"_id": conversation.Id, "participants": userId}, &conversation)
 	if err != nil {
 		log.Errorln(err)
 		return err
@@ -155,14 +155,8 @@ func (conversation *Conversation) SendMessage(log *zap.SugaredLogger, message *M
 		}
 		message.ConversationId = conversation.Id
 	} else {
-		err := conversation.SetConversationById(log)
+		err := conversation.SetConversationById(log, message.SenderId)
 		if err != nil {
-			log.Errorln(err)
-			return err
-		}
-
-		if !conversation.IsParticipant(log, message.SenderId) {
-			err := system.ErrNotMemberOfConversation
 			log.Errorln(err)
 			return err
 		}
@@ -188,26 +182,29 @@ func (conversation *Conversation) SendMessage(log *zap.SugaredLogger, message *M
 	return nil
 }
 
-func (conversation *Conversation) GetMessagesWithFriend(log *zap.SugaredLogger, userIds []string) ([]*Message, error) {
-	filter := map[string]interface{}{"participants": map[string]interface{}{"$all": userIds}, "type": system.ConversationTypeOne2One}
+func (conversation *Conversation) GetConversationWithFriend(log *zap.SugaredLogger, userIds []string) (*Conversation, error) {
+
+	filter := map[string]interface{}{"participants": map[string]interface{}{"$all": userIds}, "conversationType": system.ConversationTypeOne2One}
 
 	conversations, err := conversation.GetConversationsWithFilter(log, filter, 0, 1)
-	if err != nil {
+	if err != nil && err != system.ErrNoMongoDocument {
 		log.Errorln(err)
 		return nil, err
 	}
 
-	var messages []*Message
-	if len(conversations) != 0 {
-		conversation = conversations[0]
-		messages, err = conversation.GetMessages(log, 0, system.MessagesLimit)
+	if len(conversations) == 0 {
+		conversation.Participants = userIds
+		conversation.Type = system.ConversationTypeOne2One
+		err := conversation.Create(log)
 		if err != nil {
 			log.Errorln(err)
 			return nil, err
 		}
+	} else {
+		conversation = conversations[0]
 	}
 
-	return messages, err
+	return conversation, nil
 }
 
 func (conversation *Conversation) GetMessages(log *zap.SugaredLogger, offset, limit int64) ([]*Message, error) {

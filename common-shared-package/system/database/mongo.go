@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+
 	"github.com/Masher828/MessengerBackend/common-shared-package/conf"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -23,6 +24,7 @@ func ConnectMongo() (*mongo.Client, error) {
 		uri += ":" + port
 	}
 
+	fmt.Println(uri)
 	serverAPIOptions := options.ServerAPI(options.ServerAPIVersion1)
 
 	clientOptions := options.Client().

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/Masher828/MessengerBackend/common-shared-package/conf"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
 	"github.com/Masher828/MessengerBackend/messagesapp/routes"
@@ -36,6 +37,7 @@ func main() {
 
 	routes.PrepareRoutes(app)
 
+	// go MQTT.Publish(system.MessengerContext.Mqtt)
 	port := ":" + conf.MessengerConfig.Apps.Service.Address
 	err = app.Run(port)
 	if err != nil {

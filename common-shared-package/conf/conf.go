@@ -2,8 +2,9 @@ package conf
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"os"
+
+	"github.com/spf13/viper"
 )
 
 type Address struct {
@@ -48,6 +49,16 @@ type Mail struct {
 	SendActualMail         string `yaml:"sendActualMail"`
 	SendActualMailForError string `yaml:"sendActualMailForError"`
 }
+
+type Mqtt struct {
+	Broker                string `yaml:"broker"`
+	Username              string `yaml:"username"`
+	Password              string `yaml:"password"`
+	ServerCaFile          string `yaml:"serverCaFile"`
+	ClientCertificateFile string `yaml:"clientCertificateFile"`
+	ClientKeyFile         string `yaml:"clientKeyFile"`
+}
+
 type Config struct {
 	DomainUrl         string      `yaml:"domainUrl"`
 	Apps              Apps        `yaml:"apps"`
@@ -57,6 +68,7 @@ type Config struct {
 	SendActualMessage string      `yaml:"sendActualMessage"`
 	Mail              Mail        `yaml:"mail"`
 	AssetPath         string      `yaml:"assetPath"`
+	Mqtt              Mqtt        `yaml:"mqtt"`
 }
 
 var (

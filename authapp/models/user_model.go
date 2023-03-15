@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
+
 	mongocommonrepo "github.com/Masher828/MessengerBackend/common-shared-package/mongo-common-repo"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.uber.org/zap"
-	"regexp"
-	"strings"
 )
 
 type RequestUser struct {
@@ -122,9 +123,8 @@ func (user *User) SetUserByEmail(log *zap.SugaredLogger, email string) error {
 
 func (user *User) SetUserById(log *zap.SugaredLogger, userId string) error {
 
-	filter := map[string]interface{}{"_id": userId}
 	selectedFields := map[string]interface{}{"name": 1, "emailId": 1, "createdOn": 1, "updatedOn": 1, "phone": 1, "status": 1, "gender": 1}
-	err := mongocommonrepo.GetSelectedFieldsDocumentsWithFilter(log, system.CollectionNameUser, selectedFields, filter, 0, 1, &user)
+	err := mongocommonrepo.GetSelectedFieldsDocumentsById(log, system.CollectionNameUser, userId, selectedFields, user)
 	if err != nil {
 		log.Errorln(err)
 		return err

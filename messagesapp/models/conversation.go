@@ -2,8 +2,10 @@ package models
 
 import (
 	"errors"
+
 	mongo_common_repo "github.com/Masher828/MessengerBackend/common-shared-package/mongo-common-repo"
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
@@ -220,13 +222,11 @@ func (conversation *Conversation) GetMessages(log *zap.SugaredLogger, offset, li
 
 func (conversation *Conversation) SendNotificationToParticipants(log *zap.SugaredLogger, senderId string) error {
 
-	//TODO : implement pub/sub and remove the sender and move this to messages
-	filter := map[string]interface{}{"conversationId": conversation.Id, "userId": map[string]interface{}{"$in": conversation.Participants}}
-	updateQuery := map[string]interface{}{"$inc": map[string]interface{}{"count": 1}}
-	err := mongo_common_repo.UpsertDocumentCustomQuery(log, system.CollectionNameConversationUnread, filter, updateQuery)
-	if err != nil {
-		log.Errorln(err)
-		return err
+	mqttClient := system.MessengerContext.Mqtt
+
+	for _, user := range conversation.Participants {
+		payload, _ := json.Marshal(map[string]interface{}{"ActionId": "MessageUpdate"})
+		mqttClient.Publish("user/topic/"+user, 0, false, payload)
 	}
 
 	return nil

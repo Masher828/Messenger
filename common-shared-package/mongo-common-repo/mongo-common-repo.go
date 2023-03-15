@@ -2,7 +2,9 @@ package mongo_common_repo
 
 import (
 	"context"
+
 	"github.com/Masher828/MessengerBackend/common-shared-package/system"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 )
@@ -127,6 +129,25 @@ func GetSelectedFieldsDocumentsWithFilter(log *zap.SugaredLogger, collectionName
 	defer cursor.Close(context.TODO())
 
 	err = cursor.All(context.TODO(), data)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return err
+}
+
+func GetSelectedFieldsDocumentsById(log *zap.SugaredLogger, collectionName, documentId string, selectedFields map[string]interface{}, data interface{}) error {
+
+	db := system.MessengerContext.MongoDB
+
+	collection := db.Database(system.MongoDatabaseName).Collection(collectionName)
+
+	opts := options.FindOneOptions{}
+
+	opts.SetProjection(selectedFields)
+
+	err := collection.FindOne(context.TODO(), bson.M{"_id": documentId}, &opts).Decode(data)
 	if err != nil {
 		log.Errorln(err)
 		return err

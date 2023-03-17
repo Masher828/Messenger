@@ -225,7 +225,7 @@ func (conversation *Conversation) SendNotificationToParticipants(log *zap.Sugare
 	mqttClient := system.MessengerContext.Mqtt
 
 	for _, user := range conversation.Participants {
-		payload, _ := json.Marshal(map[string]interface{}{"ActionId": "MessageUpdate"})
+		payload, _ := json.Marshal(map[string]interface{}{"actionId": "MessageUpdate", "conversationId": conversation.Id})
 		mqttClient.Publish("user/topic/"+user, 0, false, payload)
 	}
 
